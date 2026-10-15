@@ -1,5 +1,6 @@
-# YazLab-I-Proje-I
+# Yazılım Geliştirme Laboratuvarı I<br>Proje I
 
+## Mermaid deneme
 ```mermaid
 graph TD;
     Adana-->Bursa;
