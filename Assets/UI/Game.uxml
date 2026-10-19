@@ -1,0 +1,3 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <ui:Label text="Kamerayı değiştirmek için &quot;V&quot; tuşuna basın&#10;" style="color: rgb(231, 231, 231); height: 62px; width: 475px; font-size: 26px; text-shadow: 4px 26px 0 rgba(0, 0, 0, 0.686);"/>
+</ui:UXML>
