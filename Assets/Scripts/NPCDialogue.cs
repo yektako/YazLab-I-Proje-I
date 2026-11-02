@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UIElements;
 using UnityEngine.InputSystem;
@@ -6,30 +5,84 @@ using Unity.Cinemachine;
 using System.Collections.Generic;
 using System.Collections;
 using UnityEngine.Networking;
-using System.Text.Json;
 using System.Text;
+using Player;
+using System.Linq;
 
 public class NPCDialogue : MonoBehaviour
 {
-    [SerializeField] private Transform npcTransform;
-    [SerializeField] private Transform playerTransform;
+    [SerializeField] private PlayerController playerController;
     [SerializeField] private PanelRenderer approachUI;
     [SerializeField] private PanelRenderer dialogueUI;
     [SerializeField] private PanelRenderer overlayUI;
     [SerializeField] private CinemachineCamera dialogueCamera;
     [SerializeField] private float minDistance = 6;
-    private PlayerInput playerInput;
+    [SerializeField] private string systemPrompt = "Only respond in short Turkish sentences.";
+    private DialoguePrompt dialoguePrompt;
     private TextField dialogueField;
-    private Label messageLog;
+    private Label messageLogLabel;
     private List<string> messages;
+    //private readonly string apiUrl = "http://localhost:9931/completions";
+    private readonly string chatUrl = "http://localhost:9931/v1/chat/completions";
+    [System.Serializable]
+    public class DialogueMessage
+    {
+        public string role;
+        public string content;
+        public DialogueMessage(string role, string content)
+        {
+            this.role = role;
+            this.content = content;
+        }
+    }
+    [System.Serializable]
+    public class DialoguePrompt
+    {
+        public string model = "default";
+        public List<DialogueMessage> messages;
+        public int max_tokens = 150;
+        public bool stream = true;
+        public DialoguePrompt(string systemPrompt)
+        {
+            messages = new List<DialogueMessage>();
+            AddMessage("system",systemPrompt);
+        }
+        public void AddMessage(string role, string content)
+        {
+            DialogueMessage message = new DialogueMessage(role,content);
+            messages.Add(message);
+        }
+    }
+    [System.Serializable]
+    public class DialogueResponseChunk
+    {
+        public DialogueResponseChoices[] choices;
+        public int created;
+        public string id;
+        public string model;
+    }
+    [System.Serializable]
+    public class DialogueResponseChoices
+    {
+        public string finish_reason;
+        public int index;
+        public DialogueResponseDelta delta;
+    }
+    [System.Serializable]
+    public class DialogueResponseDelta
+    {
+        public string content;
+    }
     void Start()
     {
         dialogueUI.RegisterUIReloadCallback(OnUIReload);
-        playerInput = playerTransform.gameObject.GetComponent<PlayerInput>();
+        StartCoroutine(GetApiHealth());
+        dialoguePrompt = new DialoguePrompt(systemPrompt);
+        Debug.Log($"diyalog promptu oluşturuldu: {JsonUtility.ToJson(dialoguePrompt)}");
     }
     void Update()
     {
-        float distance = Vector3.Distance(npcTransform.position,playerTransform.position);
+        float distance = Vector3.Distance(transform.position,playerController.transform.position);
         if (distance <= minDistance && !approachUI.enabled && !dialogueUI.enabled)
         {
             approachUI.enabled = true;
@@ -37,6 +90,10 @@ public class NPCDialogue : MonoBehaviour
         else if (distance > minDistance && dialogueUI.enabled)
         {
             LeaveDialogue();
+        }
+        else if (distance > minDistance && approachUI.enabled)
+        {
+            approachUI.enabled = false;
         }
 
         if (approachUI.enabled && Keyboard.current.eKey.wasPressedThisFrame)
@@ -50,50 +107,89 @@ public class NPCDialogue : MonoBehaviour
             {
                 LeaveDialogue();
             }
-            else if (Keyboard.current.enterKey.wasPressedThisFrame && messageLog != null && dialogueField != null)
+            else if (Keyboard.current.enterKey.wasPressedThisFrame && messageLogLabel != null && dialogueField != null)
             {
-                if (dialogueField.value != "")
+                if (dialogueField.value != string.Empty)
                 {
-                    StartCoroutine(SendPrompt(dialogueField.value));
+                    StartCoroutine(SendDialogueMessage(dialogueField.value));
                 }
-                messageLog.text += $"\n► {dialogueField.value}";
+                MessageLogWriteLine($"► {dialogueField.value}");
                 dialogueField.value = "";
             }
         }
     }
-    private IEnumerator SendPrompt(string text)
+    private IEnumerator SendDialogueMessage(string messageContent)
     {
-        string url = "http://localhost:9931/completion";
-        var data = new Dictionary<string, object>{
-            {"model", "default"},
-            {"prompt", text},
-            {"max_tokens",600},
-            {"stream",false}
-        };
-        string jsonString = JsonSerializer.Serialize(data);
-        using (var request = new UnityWebRequest(url, "POST"))
+        dialoguePrompt.AddMessage("user",messageContent);
+        string jsonRequest = JsonUtility.ToJson(dialoguePrompt);
+        Debug.Log($"json oluşturuldu: {jsonRequest}");
+        using (UnityWebRequest request = new UnityWebRequest(chatUrl, "POST"))
         {
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonString);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            byte[] jsonBytes = Encoding.UTF8.GetBytes(jsonRequest);
+            request.uploadHandler = new UploadHandlerRaw(jsonBytes);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type","application/json");
-            Debug.Log($"prompt gönderiliyor: {text}");
-            request.timeout = 60;
-            yield return request.SendWebRequest();
+            Debug.Log($"prompt gönderiliyor: {messageContent}");
+            UnityWebRequestAsyncOperation stream = request.SendWebRequest();
+            ulong responseLength = 0;
+            string fullResponse = "";
+            while (!stream.isDone)
+            {
+                if (responseLength < request.downloadedBytes)
+                {
+                    responseLength = request.downloadedBytes;
+                    try
+                    {
+                        int startIndex = request.downloadHandler.text.IndexOf("{");
+                        string lastChunk = request.downloadHandler.text.Trim().Split('\n').Last().Substring(startIndex);
+                        Debug.Log($"chunk: {lastChunk}");
+                        DialogueResponseChunk chunk = JsonUtility.FromJson<DialogueResponseChunk>(lastChunk);
+                        string content = chunk.choices[0].delta.content;
+                        if (content != "<think>" && content != "</think>" && content != "\n\n")
+                        {
+                            MessageLogWrite(content);
+                            fullResponse += content;
+                        }
+                    }
+                    catch (System.Exception exception)
+                    {
+                        Debug.LogError($"JSON okuma hatası: {exception.Message}");
+                        MessageLogWriteLine($"\n❌ Json okuma hatası: {exception.Message}");
+                        request.Abort();
+                    }
+                }
+                yield return null;
+            }
             if (request.result == UnityWebRequest.Result.Success)
             {
-                var response = request.downloadHandler.text;
-                JsonElement root = JsonDocument.Parse(response).RootElement;
-                root.TryGetProperty("content", out JsonElement content);
-                string responseString = content.GetString().Replace("<think>","").Replace("</think>","").Trim();
-                messageLog.text += "\n🤖 " + responseString;
-                Debug.Log($"yanıt alındı: {response}");
+                MessageLogWriteLine($"\n- - - - - - - -");
+                dialoguePrompt.AddMessage("assistant",fullResponse);
+                Debug.Log($"başarılı, tam cevap: {fullResponse} --- mevcut prompt: {JsonUtility.ToJson(dialoguePrompt)}");
             }
             else
             {
-                messageLog.text += "\n🤖❌ HATA: " + request.error;
+                MessageLogWriteLine("\n❌ " + request.error);
                 Debug.LogError($"prompt hatası: {request.error}");
             }
+        }
+    }
+    private void MessageLogWrite(string message)
+    {
+        messageLogLabel.text += message;
+    }
+    private void MessageLogWriteLine(string message)
+    {
+        messageLogLabel.text += message + '\n';
+    }
+    private IEnumerator GetApiHealth()
+    {
+        string apiUrl = "http://localhost:9931/health";
+        using (UnityWebRequest request = new UnityWebRequest(apiUrl, "GET"))
+        {
+            request.downloadHandler = new DownloadHandlerBuffer();
+            yield return request.SendWebRequest();
+            string response = request.downloadHandler.text;
+            Debug.Log($"sağlık: {response} - kod: {request.responseCode}");
         }
     }
     private void EnterDialogue()
@@ -102,7 +198,6 @@ public class NPCDialogue : MonoBehaviour
         overlayUI.enabled = false;
         dialogueUI.enabled = true;
         dialogueCamera.Priority = 100;
-        playerInput.enabled = false;
         UnityEngine.Cursor.visible = true;
         UnityEngine.Cursor.lockState = CursorLockMode.None;
     }
@@ -111,19 +206,12 @@ public class NPCDialogue : MonoBehaviour
         overlayUI.enabled = true;
         dialogueUI.enabled = false;
         dialogueCamera.Priority = 0;
-        playerInput.enabled = true;
         UnityEngine.Cursor.visible = false;
         UnityEngine.Cursor.lockState = CursorLockMode.Locked;
     }
     private void OnUIReload(PanelRenderer renderer, VisualElement root, int version)
     {
-        if (dialogueField == null)
-        {
-            dialogueField = root.Q<TextField>("InputDialogue");
-        }
-        if (messageLog == null)
-        {
-            messageLog = root.Q<Label>("MessageLog");
-        }
+        dialogueField = root.Q<TextField>("InputDialogue");
+        messageLogLabel = root.Q<Label>("MessageLog");
     }
 }
