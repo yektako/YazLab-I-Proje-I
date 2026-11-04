@@ -96,7 +96,7 @@ Transform:
   m_GameObject: {fileID: 5617952331818976097}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 12.31, y: 0.82, z: 9.46}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -115,7 +115,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef1c01aca98b5e14ea37a8c936ad7864, type: 3}
   m_Name: 
   m_EditorClassIdentifier: '::'
-  navMeshSurface: {fileID: 0}
+  navmeshController: {fileID: 0}
   finalYPosition: -10
   descentPeriod: 2
   triggeredMaterial: {fileID: 2100000, guid: a45991e9649450b4e824ded532e2edc9, type: 2}

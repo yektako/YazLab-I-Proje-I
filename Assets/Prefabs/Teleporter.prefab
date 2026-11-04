@@ -92,7 +92,7 @@ Transform:
   m_GameObject: {fileID: 7956924854500373579}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 2.6, y: -0, z: 41}
+  m_LocalPosition: {x: 0, y: -0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -113,7 +113,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 75e6817f794475e45b2bc792f44e7fc3, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TeleporterController
-  exitTeleporter: {fileID: 0}
+  targetTeleporter: {fileID: 0}
+  lightColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.6}
+  lightPriority: 0
+  audioTeleport: {fileID: 8300000, guid: 55462452cb80442b6acf85f10b161e13, type: 3}
+  audioVolume: 0.5
 --- !u!1001 &231466958173086202
 PrefabInstance:
   m_ObjectHideFlags: 0
