@@ -8,6 +8,9 @@ TagManager:
   - RemoteInteractable
   - Beacon
   - Level
+  - Actuator
+  - NPC
+  - Detector
   layers:
   - Default
   - TransparentFX
