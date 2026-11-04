@@ -1118,7 +1118,7 @@ MonoBehaviour:
   sprintSpeed: 10
   rotateSpeed: 180
   moveInertia: 3
-  rotateInertia: 5
+  rotateInertia: 10
   gravity: -10
 --- !u!114 &288848401
 MonoBehaviour:
