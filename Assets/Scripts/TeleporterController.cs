@@ -45,16 +45,16 @@ public class TeleporterController : MonoBehaviour
     {
         if (other.CompareTag("Player") && !isPlayerIgnored && targetTeleporter != null)
         {
-            targetTeleporter.IgnorePlayer();
-            var characterController = other.GetComponent<CharacterController>();
-            characterController.enabled = false;
-            other.transform.position = targetTeleporter.GetExitPosition();
-            characterController.enabled = true;
+            PlayerController player = other.GetComponent<PlayerController>();
+            player.SetCheckpoint(targetTeleporter);
+            player.UseCheckpoint();
+            var npc = player.npc;
+            npc.UseCheckpoint();
         }
-        else if (isPlayerIgnored)
+        else if (other.CompareTag("Player") && isPlayerIgnored)
         {
-            PlayerController playerController = other.GetComponent<PlayerController>();
-            playerController.SetCheckpoint(this);
+            PlayerController player = other.GetComponent<PlayerController>();
+            player.SetCheckpoint(this);
             AudioSource.PlayClipAtPoint(audioTeleport, GetExitPosition(), audioVolume);
         }
     }

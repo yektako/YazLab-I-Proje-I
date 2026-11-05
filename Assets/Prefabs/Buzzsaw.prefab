@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 6407312421528785000}
   m_Layer: 0
   m_Name: Buzzsaw
-  m_TagString: Untagged
+  m_TagString: Hazard
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -61,9 +61,10 @@ GameObject:
   - component: {fileID: 5049634694491969767}
   - component: {fileID: 947756417542577834}
   - component: {fileID: 8844626228018251813}
+  - component: {fileID: 3079015400919649401}
   m_Layer: 0
   m_Name: Detector
-  m_TagString: Untagged
+  m_TagString: Hazard
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -98,7 +99,7 @@ MeshCollider:
     serializedVersion: 2
     m_Bits: 0
   m_LayerOverridePriority: 0
-  m_IsTrigger: 0
+  m_IsTrigger: 1
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 5
@@ -125,6 +126,18 @@ MonoBehaviour:
   m_IgnoreFromBuild: 1
   m_ApplyToChildren: 1
   m_AffectedAgents: ffffffffi
+--- !u!114 &3079015400919649401
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8529944926500360557}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9523bf1e33675da4c98c590c4a5c22b1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Killzone
 --- !u!1001 &2687789151895138425
 PrefabInstance:
   m_ObjectHideFlags: 0

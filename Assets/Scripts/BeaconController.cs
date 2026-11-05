@@ -10,7 +10,7 @@ public class BeaconController : MonoBehaviour
     void Start()
     {
         lightController = GetComponentInChildren<BeaconLightController>();
-        lightController.SetStatus(isSelected);
+        SetSelected(isSelected);
     }
     void Update()
     {

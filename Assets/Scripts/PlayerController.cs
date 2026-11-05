@@ -1,3 +1,4 @@
+using NPC;
 using Unity.Cinemachine;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -7,6 +8,8 @@ namespace Player
     [RequireComponent(typeof(CharacterController))]
     public class PlayerController : MonoBehaviour
     {
+        public NPCController npc;
+        public TeleporterController checkpointTeleporter;
         [SerializeField] private CinemachineCamera cameraFirstPerson;
         [SerializeField] private CinemachineCamera cameraThirdPerson;
         [SerializeField] private bool isFirstPerson = false;
@@ -28,7 +31,6 @@ namespace Player
         private readonly int robotTracksShaderID = Shader.PropertyToID("_BaseMap_ST");
         private float robotTracksScroll = 0;
         private Vector2 momentum = Vector2.zero;
-        private TeleporterController checkpointTeleporter;
         private CinemachinePanTilt firstPersonPanTilt;
         private void OnEnable()
         {
@@ -132,6 +134,11 @@ namespace Player
         public void SetCheckpoint(TeleporterController teleporter)
         {
             checkpointTeleporter = teleporter;
+        }
+        public bool HasCheckpoint()
+        {
+            if (checkpointTeleporter == null) return false;
+            else return true;
         }
         public void UseCheckpoint()
         {
