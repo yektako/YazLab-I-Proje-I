@@ -1,7 +1,7 @@
 using Player;
 using UnityEngine;
 
-public class TeleporterController : MonoBehaviour
+public class TeleporterController : MonoBehaviour, IDetectingController
 {
     [SerializeField] private TeleporterController targetTeleporter;
     public Color lightColor = new Color(0.5f,0.5f,0.5f,0.6f);
@@ -49,6 +49,7 @@ public class TeleporterController : MonoBehaviour
             player.SetCheckpoint(targetTeleporter);
             player.UseCheckpoint();
             var npc = player.npc;
+            npc.StopImmediately();
             npc.UseCheckpoint();
         }
         else if (other.CompareTag("Player") && isPlayerIgnored)

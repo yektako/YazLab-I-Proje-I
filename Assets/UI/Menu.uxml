@@ -1,7 +1,10 @@
 <ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
-    <ui:VisualElement name="Title" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0.314); translate: 0 0; margin-left: 8px; margin-right: 8px; margin-top: 8px; margin-bottom: 8px;">
+    <ui:VisualElement name="Title" enabled="true" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0.314); translate: 0 0; margin-left: 8px; margin-right: 8px; margin-top: 8px; margin-bottom: 8px; position: relative;">
         <ui:Label text="Proje-I" name="" style="height: 79px; font-size: 53px; top: 43%; text-shadow: 2px 0 22px rgb(0, 1, 94); -unity-text-outline-width: 0; -unity-text-outline-color: rgba(126, 238, 255, 0); color: rgb(255, 255, 255); letter-spacing: 15px; word-spacing: 0; -unity-font-style: bold; left: 3%;"/>
         <ui:Label text="Yazılım Geliştirme Laboratuvarı I" style="height: 79px; font-size: 53px; top: 20%; text-shadow: 2px 0 22px rgb(0, 1, 94); -unity-text-outline-width: 0; -unity-text-outline-color: rgba(126, 238, 255, 0.078); color: rgb(255, 255, 255); letter-spacing: 15px; word-spacing: 0; -unity-font-style: bold; left: 3%;"/>
         <ui:Label text="••• Başlamak için bir tuşa tıklayın •••" style="position: absolute; bottom: 19%; width: 100%; -unity-text-align: upper-center; color: rgb(255, 255, 255); font-size: 36px;"/>
+    </ui:VisualElement>
+    <ui:VisualElement name="Pause" enabled="false" style="flex-grow: 1; background-color: rgba(0, 0, 0, 0.314); translate: 0 0; margin-left: 1405px; margin-right: 8px; margin-top: 50px; margin-bottom: 50px; position: absolute; top: 0; right: 0; bottom: 0; left: 0;">
+        <ui:Button text="Oyundan Çık" name="Quit" enabled="true" style="position: absolute; font-size: 70px; margin-left: 50px; margin-top: 50px; right: 25px;"/>
     </ui:VisualElement>
 </ui:UXML>

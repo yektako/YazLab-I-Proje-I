@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1558278720596237260}
   - component: {fileID: 6687568542625923526}
-  - component: {fileID: 4404349202971812486}
+  - component: {fileID: 1656316185211296907}
   m_Layer: 0
   m_Name: Detector
   m_TagString: Untagged
@@ -54,7 +54,7 @@ BoxCollider:
   serializedVersion: 3
   m_Size: {x: 2, y: 1, z: 2}
   m_Center: {x: 0, y: 0.61, z: 0}
---- !u!114 &4404349202971812486
+--- !u!114 &1656316185211296907
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -63,9 +63,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 535530447243026948}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 86607611a29a22946940a1de159d69f8, type: 3}
+  m_Script: {fileID: 11500000, guid: 884deba69cb76ef438569cf2e00b1c7e, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::TeleporterDetector
+  m_EditorClassIdentifier: Assembly-CSharp::Detector
 --- !u!1 &7956924854500373579
 GameObject:
   m_ObjectHideFlags: 0

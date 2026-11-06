@@ -6,6 +6,7 @@ using UnityEngine;
 public class NavmeshController : MonoBehaviour
 {
     private NavMeshSurface navmeshSurface;
+    private bool isInvoked = false;
     void Awake()
     {
         navmeshSurface = GetComponent<NavMeshSurface>();
@@ -19,10 +20,16 @@ public class NavmeshController : MonoBehaviour
     }
     public void Refresh()
     {
-        navmeshSurface.UpdateNavMesh(navmeshSurface.navMeshData);
+        if (!isInvoked)
+        {
+            isInvoked = true;
+            Invoke(nameof(Bake), 1);
+        }
     }
     public void Bake()
     {
-        navmeshSurface.BuildNavMesh();
+        //navmeshSurface.BuildNavMesh();
+        navmeshSurface.UpdateNavMesh(navmeshSurface.navMeshData);
+        isInvoked = false;
     }
 }

@@ -23,6 +23,7 @@ namespace NPC
         public AudioClip[] audioFootsteps;
         [Range(0, 1)] public float audioVolume = 0.5f;
         public float raycastMaxDistance = 1.6f;
+        public float gravity = -9f;
         private float acceleration;
         private void Awake()
         {
@@ -52,16 +53,22 @@ namespace NPC
             Vector3 origin = transform.position + 0.7f*Vector3.up;
             detected |= CheckHazardVector(origin, transform.forward);
 
-            Vector3 directionL = transform.forward - 0.6f*transform.right;
+            Vector3 directionL = transform.forward - 0.3f*transform.right;
             detected |= CheckHazardVector(origin,directionL);
             
-            Vector3 directionR = transform.forward + 0.6f*transform.right;
+            Vector3 directionR = transform.forward + 0.3f*transform.right;
             detected |= CheckHazardVector(origin,directionR);
+
+            Vector3 directionLL = transform.forward - 0.75f*transform.right;
+            detected |= CheckHazardVector(origin,directionLL);
+            
+            Vector3 directionRR = transform.forward + 0.75f*transform.right;
+            detected |= CheckHazardVector(origin,directionRR);
 
             if (detected)
             {
                 agent.isStopped = true;
-                agent.acceleration = 50;
+                agent.acceleration = 150;
             }
             else
             {
@@ -96,16 +103,20 @@ namespace NPC
             {
                 TeleporterController teleporter = player.checkpointTeleporter;
                 controller.enabled = false;
-                transform.position = teleporter.GetExitPosition();
+                agent.Warp(teleporter.GetExitPosition() - 0.7f*player.transform.forward);
                 controller.enabled = true;
-                Debug.Log($"pos: {transform.position} , telpos: {teleporter.GetExitPosition()}");
             }
             else
             {
                 controller.enabled = false;
-                transform.position = player.transform.position - player.transform.forward;
+                agent.Warp(player.transform.position - 0.7f*player.transform.forward);
                 controller.enabled = true;
             }
+        }
+        public void StopImmediately()
+        {
+            agent.ResetPath();
+            agent.velocity = Vector3.zero;
         }
         private void AssignAnimationIDs()
         {

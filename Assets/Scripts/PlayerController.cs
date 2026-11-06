@@ -19,6 +19,8 @@ namespace Player
         [SerializeField] private float moveInertia = 2f;
         [SerializeField] private float rotateInertia = 4f;
         [SerializeField] private float gravity = -6f;
+        [SerializeField] private float zoomFOV = 12;
+        public int collectibleCount = 0;
         private CharacterController controller;
         private PlayerInputActions inputActions;
         private PlayerInputActions.PlayerActions playerActions;
@@ -32,6 +34,7 @@ namespace Player
         private float robotTracksScroll = 0;
         private Vector2 momentum = Vector2.zero;
         private CinemachinePanTilt firstPersonPanTilt;
+        private float firstPersonFOV;
         private void OnEnable()
         {
             controller = GetComponent<CharacterController>();
@@ -49,6 +52,7 @@ namespace Player
 
             if (isFirstPerson) ChangeView();
             firstPersonPanTilt = cameraFirstPerson.GetComponent<CinemachinePanTilt>();
+            firstPersonFOV = cameraFirstPerson.Lens.FieldOfView;
         }
         void Start()
         {
@@ -65,6 +69,7 @@ namespace Player
             ApplyGravity();
 
             if (playerActions.ChangeView.WasPressedThisFrame()) ChangeView();
+            CheckZoom();
         }
         private void MovePlayer(Vector2 move)
         {
@@ -129,6 +134,17 @@ namespace Player
                 cameraFirstPerson.Priority = 20;
                 cameraThirdPerson.Priority = 10;
                 robotHead.GetComponent<MeshRenderer>().shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.ShadowsOnly;
+            }
+        }
+        private void CheckZoom()
+        {
+            if (playerActions.Zoom.IsPressed())
+            {
+                if (cameraFirstPerson.Lens.FieldOfView != zoomFOV) cameraFirstPerson.Lens.FieldOfView = zoomFOV;
+            }
+            else
+            {
+                if (cameraFirstPerson.Lens.FieldOfView != firstPersonFOV) cameraFirstPerson.Lens.FieldOfView = firstPersonFOV;
             }
         }
         public void SetCheckpoint(TeleporterController teleporter)

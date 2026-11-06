@@ -143,6 +143,16 @@ namespace Player
                     ""interactions"": """",
                     ""initialStateCheck"": false,
                     ""priority"": 0
+                },
+                {
+                    ""name"": ""Zoom"",
+                    ""type"": ""PassThrough"",
+                    ""id"": ""2e3a93bc-1ec0-4dda-b6d4-15c40cc9ad17"",
+                    ""expectedControlType"": """",
+                    ""processors"": """",
+                    ""interactions"": """",
+                    ""initialStateCheck"": false,
+                    ""priority"": 0
                 }
             ],
             ""bindings"": [
@@ -325,11 +335,22 @@ namespace Player
                 {
                     ""name"": """",
                     ""id"": ""9b0dfe50-3707-4400-a623-4aca4f7ddf9e"",
-                    ""path"": ""<Keyboard>/#(V)"",
+                    ""path"": ""<Keyboard>/v"",
                     ""interactions"": """",
                     ""processors"": """",
                     ""groups"": "";KeyboardMouse"",
                     ""action"": ""ChangeView"",
+                    ""isComposite"": false,
+                    ""isPartOfComposite"": false
+                },
+                {
+                    ""name"": """",
+                    ""id"": ""d39fae81-f392-4f01-b067-ba1fdf64015d"",
+                    ""path"": ""<Keyboard>/q"",
+                    ""interactions"": """",
+                    ""processors"": """",
+                    ""groups"": "";KeyboardMouse"",
+                    ""action"": ""Zoom"",
                     ""isComposite"": false,
                     ""isPartOfComposite"": false
                 }
@@ -393,6 +414,7 @@ namespace Player
             m_Player_Jump = m_Player.FindAction("Jump", throwIfNotFound: true);
             m_Player_Sprint = m_Player.FindAction("Sprint", throwIfNotFound: true);
             m_Player_ChangeView = m_Player.FindAction("ChangeView", throwIfNotFound: true);
+            m_Player_Zoom = m_Player.FindAction("Zoom", throwIfNotFound: true);
         }
 
         ~@PlayerInputActions()
@@ -478,6 +500,7 @@ namespace Player
         private readonly InputAction m_Player_Jump;
         private readonly InputAction m_Player_Sprint;
         private readonly InputAction m_Player_ChangeView;
+        private readonly InputAction m_Player_Zoom;
         /// <summary>
         /// Provides access to input actions defined in input action map "Player".
         /// </summary>
@@ -509,6 +532,10 @@ namespace Player
             /// Provides access to the underlying input action "Player/ChangeView".
             /// </summary>
             public InputAction @ChangeView => m_Wrapper.m_Player_ChangeView;
+            /// <summary>
+            /// Provides access to the underlying input action "Player/Zoom".
+            /// </summary>
+            public InputAction @Zoom => m_Wrapper.m_Player_Zoom;
             /// <summary>
             /// Provides access to the underlying input action map instance.
             /// </summary>
@@ -550,6 +577,9 @@ namespace Player
                 @ChangeView.started += instance.OnChangeView;
                 @ChangeView.performed += instance.OnChangeView;
                 @ChangeView.canceled += instance.OnChangeView;
+                @Zoom.started += instance.OnZoom;
+                @Zoom.performed += instance.OnZoom;
+                @Zoom.canceled += instance.OnZoom;
             }
 
             /// <summary>
@@ -576,6 +606,9 @@ namespace Player
                 @ChangeView.started -= instance.OnChangeView;
                 @ChangeView.performed -= instance.OnChangeView;
                 @ChangeView.canceled -= instance.OnChangeView;
+                @Zoom.started -= instance.OnZoom;
+                @Zoom.performed -= instance.OnZoom;
+                @Zoom.canceled -= instance.OnZoom;
             }
 
             /// <summary>
@@ -703,6 +736,13 @@ namespace Player
             /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
             /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
             void OnChangeView(InputAction.CallbackContext context);
+            /// <summary>
+            /// Method invoked when associated input action "Zoom" is either <see cref="UnityEngine.InputSystem.InputAction.started" />, <see cref="UnityEngine.InputSystem.InputAction.performed" /> or <see cref="UnityEngine.InputSystem.InputAction.canceled" />.
+            /// </summary>
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.started" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.performed" />
+            /// <seealso cref="UnityEngine.InputSystem.InputAction.canceled" />
+            void OnZoom(InputAction.CallbackContext context);
         }
     }
 }

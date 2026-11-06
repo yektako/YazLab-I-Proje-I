@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class DoorController : MonoBehaviour
+public class DoorController : MonoBehaviour, IResettable
 {
     [SerializeField] private ActuatorController actuator;
     public DoorState state = DoorState.Closed;
@@ -13,12 +13,14 @@ public class DoorController : MonoBehaviour
         Closing,
         Opening
     }
+    private DoorState startState;
     private Transform doorLeft;
     private Transform doorRight;
     private Transform doorFrame;
     private Bounds bounds;
     void Awake()
     {
+        startState = state;
         doorLeft = transform.Find("metal door/metal door left");
         doorRight = transform.Find("metal door/metal door right");
         doorFrame = transform.Find("metal door/metal door frame");
@@ -33,7 +35,7 @@ public class DoorController : MonoBehaviour
         }
         if (state == DoorState.Opening)
         {
-            if (doorLeft.transform.localPosition.x < bounds.extents.x/transform.localScale.x/3)
+            if (doorLeft.transform.localPosition.x < bounds.extents.x/transform.localScale.x/2.8f)
             {
                 doorLeft.transform.localPosition += speedMultiplier * Time.deltaTime * Vector3.right;
                 doorRight.transform.localPosition += speedMultiplier * Time.deltaTime * Vector3.left;
@@ -41,8 +43,8 @@ public class DoorController : MonoBehaviour
             else
             {
                 state = DoorState.Open;
-                doorLeft.transform.localPosition = bounds.extents.x/transform.localScale.x/3 * Vector3.right;
-                doorRight.transform.localPosition = bounds.extents.x/transform.localScale.x/3 * Vector3.left;
+                doorLeft.transform.localPosition = bounds.extents.x/transform.localScale.x/2.8f * Vector3.right;
+                doorRight.transform.localPosition = bounds.extents.x/transform.localScale.x/2.8f * Vector3.left;
             }
         }
         else if (state == DoorState.Closing)
@@ -67,5 +69,10 @@ public class DoorController : MonoBehaviour
     public void Close()
     {
         if (state == DoorState.Open) state = DoorState.Closing;
+    }
+    public void ResetToStart()
+    {
+        if (startState == DoorState.Open) state = DoorState.Opening;
+        else if (startState == DoorState.Closed) state = DoorState.Closing;
     }
 }

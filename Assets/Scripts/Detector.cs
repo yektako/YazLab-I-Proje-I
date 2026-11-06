@@ -1,11 +1,11 @@
 using UnityEngine;
 
-public class ActuatorDetector : MonoBehaviour
+public class Detector : MonoBehaviour
 {
-    private ActuatorController controller;
+    private IDetectingController controller;
     void Start()
     {
-        controller = GetComponentInParent<ActuatorController>();
+        controller = GetComponentInParent<IDetectingController>();
     }
     void OnTriggerEnter(Collider other)
     {

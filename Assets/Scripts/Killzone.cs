@@ -8,13 +8,13 @@ public class Killzone : MonoBehaviour
     {
         if (other.CompareTag("Player"))
         {
-            PlayerController controller = other.GetComponent<PlayerController>();
-            controller.UseCheckpoint();
+            PlayerController player = other.GetComponent<PlayerController>();
+            player.UseCheckpoint();
         }
         else if (other.CompareTag("NPC"))
         {
-            NPCController controller = other.GetComponent<NPCController>();
-            controller.UseCheckpoint();
+            NPCController npc = other.GetComponent<NPCController>();
+            npc.UseCheckpoint();
         }
     }
 }

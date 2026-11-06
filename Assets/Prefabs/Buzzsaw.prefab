@@ -63,7 +63,7 @@ GameObject:
   - component: {fileID: 8844626228018251813}
   - component: {fileID: 3079015400919649401}
   m_Layer: 0
-  m_Name: Detector
+  m_Name: Kill Detector
   m_TagString: Hazard
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

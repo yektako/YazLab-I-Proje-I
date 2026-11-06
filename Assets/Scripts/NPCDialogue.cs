@@ -8,143 +8,33 @@ using UnityEngine.Networking;
 using System.Text;
 using Player;
 using System.Linq;
+using DialogueJSON;
 
 public class NPCDialogue : MonoBehaviour
 {
-    [SerializeField] private PlayerController playerController;
+    [SerializeField] private PlayerController player;
     [SerializeField] private PanelRenderer approachUI;
     [SerializeField] private PanelRenderer dialogueUI;
     [SerializeField] private PanelRenderer overlayUI;
     [SerializeField] private CinemachineCamera dialogueCamera;
     [SerializeField] private DoorController doorController;
     [SerializeField] private float minDistance = 6;
-    public string systemPromptDoor = "Only respond in Turkish. You really need to get five motherboards from a depot. Ask the user to retrieve them. If user says yes, send just 'OPENING'. Otherwise, get angry at user.";
-    public string systemPromptDoorQuestion = "Is the following message agreeing to collect motherboards? If user explicitly said yes, 'is_door_opened' is true, otherwise false.";
-    public string systemPromptDoorOpen = "Only respond in Turkish. A depot door has opened. Ask the user to rush into the depot and collect five motherboards.";
+    protected string systemPromptDoor = "Sen bir robotsun. Arkanda açılmayan bir kapı var. Kapının açılması için 5 adet dişli bulmak gerekli. Kullanıcıdan bu dişlileri bulmasını iste. Hayır derse sinirlen. Bulduysa sevin.";
+    protected string systemPromptDoorQuestion = "Bu diyaloga göre kapı açılmalı mı?";
+    protected string systemPromptDoorUpdate = "Kullanıcının bulduğu dişli sayısı:";
+    private bool isFirstMessage = true;
+    private bool isDoorOpen = false;
+    private bool isThinking = false;
     private DialoguePrompt dialoguePrompt;
     private GameStatePrompt gameStatePrompt;
     private TextField dialogueField;
     private Label messageLogLabel;
+    private Label labelServerReady;
+    private Label labelServerNotReady;
+    private Label labelThinking;
     private List<string> messages;
     //private readonly string apiUrl = "http://localhost:9931/completions";
     private readonly string chatUrl = "http://localhost:9931/v1/chat/completions";
-    [System.Serializable]
-    public class DialogueMessage
-    {
-        public string role;
-        public string content;
-        public DialogueMessage(string role, string content)
-        {
-            this.role = role;
-            this.content = content;
-        }
-    }
-    [System.Serializable]
-    public class DialoguePrompt
-    {
-        public string model = "default";
-        public List<DialogueMessage> messages;
-        public int max_tokens = 150;
-        public bool stream = true;
-        public DialoguePrompt(string systemPrompt)
-        {
-            messages = new List<DialogueMessage>();
-            AddSystemMessage(systemPrompt);
-        }
-        public void AddMessage(string role, string content)
-        {
-            DialogueMessage message = new DialogueMessage(role,content);
-            messages.Add(message);
-        }
-        public void AddSystemMessage(string content)
-        {
-            DialogueMessage message = new DialogueMessage("system",content);
-            messages.Add(message);
-        }
-        public void AddUserMessage(string content)
-        {
-            DialogueMessage message = new DialogueMessage("user",content);
-            messages.Add(message);
-        }
-    }
-    [System.Serializable]
-    public class GameStatePrompt : DialoguePrompt
-    {
-        public DialogueJSONSchema json_schema;
-        public GameStatePrompt(string systemPrompt) : base(systemPrompt)
-        {
-            var properties = new DialogueJSONProperties();
-            string[] required = {"is_door_opened"};
-            json_schema = new DialogueJSONSchema(properties, required);
-            stream = false;
-        }
-    }
-    [System.Serializable]
-    public class DialogueJSONSchema
-    {
-        public string type = "object";
-        public DialogueJSONProperties properties;
-        public string[] required;
-        public DialogueJSONSchema(DialogueJSONProperties properties, string[] required)
-        {
-            this.properties = properties;
-            this.required = required;
-        }
-    }
-    [System.Serializable]
-    public class DialogueJSONProperties
-    {
-        public DialogueJSONPropertyType is_door_opened = new DialogueJSONPropertyType("boolean");
-    }
-    [System.Serializable]
-    public class DialogueJSONPropertyType
-    {
-        public string type;
-        public DialogueJSONPropertyType(string type)
-        {
-            this.type = type;
-        }
-    }
-    [System.Serializable]
-    public class DialogueResponseChunk
-    {
-        public DialogueResponseChoices[] choices;
-        public int created;
-        public string id;
-        public string model;
-    }
-    [System.Serializable]
-    public class DialogueResponseChoices
-    {
-        public string finish_reason;
-        public int index;
-        public DialogueResponseDelta delta;
-    }
-    [System.Serializable]
-    public class DialogueResponseDelta
-    {
-        public string content;
-    }
-    [System.Serializable]
-    public class GameStateResponse
-    {
-        public GameStateResponseChoices[] choices;
-        public int created;
-        public string model;
-    }
-    [System.Serializable]
-    public class GameStateResponseChoices
-    {
-        public string finish_reason;
-        public int index;
-        public GameStateResponseMessage message;
-    }
-    [System.Serializable]
-    public class GameStateResponseMessage
-    {
-        public string role;
-        public string content;
-    }
     [System.Serializable]
     public class GameStateDoor
     {
@@ -155,12 +45,12 @@ public class NPCDialogue : MonoBehaviour
         dialogueUI.RegisterUIReloadCallback(OnUIReload);
         StartCoroutine(GetApiHealth());
         dialoguePrompt = new DialoguePrompt(systemPromptDoor);
-        gameStatePrompt = new GameStatePrompt(systemPromptDoor);
-        Debug.Log($"diyalog promptu oluşturuldu: {JsonUtility.ToJson(dialoguePrompt)}");
+        gameStatePrompt = new GameStatePrompt(systemPromptDoorQuestion);
+        InvokeRepeating(nameof(GetApiHealth), 1, 5);
     }
     void Update()
     {
-        float distance = Vector3.Distance(transform.position,playerController.transform.position);
+        float distance = Vector3.Distance(transform.position,player.transform.position);
         if (distance <= minDistance && !approachUI.enabled && !dialogueUI.enabled)
         {
             approachUI.enabled = true;
@@ -189,20 +79,26 @@ public class NPCDialogue : MonoBehaviour
             {
                 if (dialogueField.value != string.Empty)
                 {
-                    gameStatePrompt = new GameStatePrompt(systemPromptDoorQuestion);
-                    gameStatePrompt.AddUserMessage(dialogueField.value);
-                    StartCoroutine(SendGameStatePrompt());
+                    StartCoroutine(SendDialogueMessage(dialogueField.value));
+                    dialogueField.SetEnabled(false);
                 }
                 MessageLogWriteLine($"► {dialogueField.value}");
                 dialogueField.value = "";
             }
         }
+
+        if (labelThinking != null && !isThinking) labelThinking.visible = false;
     }
     private IEnumerator SendDialogueMessage(string userMessage)
     {
+        if (!isFirstMessage)
+        {
+            dialoguePrompt.AddMessage("assistant",systemPromptDoorUpdate + player.collectibleCount);
+        }
+        else isFirstMessage = false;
         dialoguePrompt.AddMessage("user",userMessage);
         string jsonRequest = JsonUtility.ToJson(dialoguePrompt);
-        //Debug.Log($"json oluşturuldu: {jsonRequest}");
+        Debug.Log($"json oluşturuldu: {jsonRequest}");
         using (UnityWebRequest request = new UnityWebRequest(chatUrl, "POST"))
         {
             byte[] jsonBytes = Encoding.UTF8.GetBytes(jsonRequest);
@@ -213,8 +109,10 @@ public class NPCDialogue : MonoBehaviour
             UnityWebRequestAsyncOperation stream = request.SendWebRequest();
             ulong responseLength = 0;
             string fullResponse = "";
+            bool boldTextStarted = false;
             while (!stream.isDone)
             {
+                if (!isThinking) isThinking = true;
                 if (responseLength < request.downloadedBytes)
                 {
                     responseLength = request.downloadedBytes;
@@ -224,7 +122,22 @@ public class NPCDialogue : MonoBehaviour
                         string lastChunk = request.downloadHandler.text.Trim().Split('\n').Last().Substring(startIndex);
                         DialogueResponseChunk chunk = JsonUtility.FromJson<DialogueResponseChunk>(lastChunk);
                         string content = chunk.choices[0].delta.content;
-                        if (content != "<think>" && content != "</think>" && content != "\n\n")
+                        if (content.Contains("**"))
+                        {
+                            content = content.Replace("**"," ");
+                            if (!boldTextStarted)
+                            {
+                                MessageLogWrite("<b>");
+                                boldTextStarted = true;
+                            }
+                            else
+                            {
+                                MessageLogWrite("</b>");
+                                boldTextStarted = false;
+                            }
+                            MessageLogWrite(content);
+                        }
+                        else if (content != "<think>" && content != "</think>" && content != "\n\n")
                         {
                             MessageLogWrite(content);
                             fullResponse += content;
@@ -242,15 +155,27 @@ public class NPCDialogue : MonoBehaviour
             if (request.result == UnityWebRequest.Result.Success)
             {
                 MessageLogWriteLine($"\n- - - - - - - -");
+                dialoguePrompt.messages.RemoveAt(dialoguePrompt.messages.Count-1); // dişli sayısı mesajını sil
                 dialoguePrompt.AddMessage("assistant",fullResponse);
                 Debug.Log($"başarılı, tam cevap: {fullResponse} --- mevcut prompt: {JsonUtility.ToJson(dialoguePrompt)}");
 
                 if (dialoguePrompt.messages.Count > 6) {dialoguePrompt.messages.RemoveAt(1);}
+
+                if (!isDoorOpen)
+                {
+                    gameStatePrompt = new GameStatePrompt(systemPromptDoorQuestion);
+                    gameStatePrompt.AddUserMessage(player.collectibleCount.ToString());
+                    StartCoroutine(SendGameStatePrompt());
+                }
+                else dialogueField.SetEnabled(true);
             }
             else
             {
-                MessageLogWriteLine("\n❌ " + request.error);
-                Debug.LogError($"prompt hatası: {request.error}");
+                if (request.responseCode == 0) MessageLogWriteLine("\n❌ Sunucuya bağlanılamadı.");
+                else MessageLogWriteLine("\n❌ Sunucu hatası: " + request.error);
+                Debug.LogError($"sunucu hatası: {request.error}, kod: {request.responseCode}");
+                dialoguePrompt.messages.Clear();
+                dialoguePrompt.AddSystemMessage(systemPromptDoor);
             }
         }
     }
@@ -271,15 +196,16 @@ public class NPCDialogue : MonoBehaviour
                 string responseContent = JsonUtility.FromJson<GameStateResponse>(request.downloadHandler.text).choices[0].message.content;
                 bool result = JsonUtility.FromJson<GameStateDoor>(responseContent).is_door_opened;
                 UpdateGameState(result);
-                StartCoroutine(SendDialogueMessage(dialogueField.value));
             }
             else
             {
-                MessageLogWriteLine("\n❌ " + request.error);
-                Debug.LogError($"gamestate prompt hatası: {request.error}");
+                MessageLogWriteLine("\n❌ Sunucu hatası: " + request.error);
+                Debug.LogError($"gamestate sunucu hatası: {request.error}, kod: {request.responseCode}");
             }
         }
         gameStatePrompt.messages.Clear();
+        dialogueField.SetEnabled(true);
+        isThinking = false;
     }
     private void UpdateGameState(bool result)
     {
@@ -287,6 +213,7 @@ public class NPCDialogue : MonoBehaviour
         {
             Debug.Log($"gamestate doğru yanıt alındı, kapı açılıyor");
             doorController.Open();
+            isDoorOpen = true;
         }
     }
     private void MessageLogWrite(string message)
@@ -304,8 +231,19 @@ public class NPCDialogue : MonoBehaviour
         {
             request.downloadHandler = new DownloadHandlerBuffer();
             yield return request.SendWebRequest();
-            string response = request.downloadHandler.text;
-            Debug.Log($"sağlık: {response} - kod: {request.responseCode}");
+            if (labelServerReady != null & labelServerNotReady != null)
+            {
+                if (request.responseCode == 200)
+                {
+                    labelServerReady.visible = true;
+                    labelServerNotReady.visible = false;
+                }
+                else
+                {
+                    labelServerReady.visible = false;
+                    labelServerNotReady.visible = true;
+                }
+            }
         }
     }
     private void EnterDialogue()
@@ -329,5 +267,8 @@ public class NPCDialogue : MonoBehaviour
     {
         dialogueField = root.Q<TextField>("InputDialogue");
         messageLogLabel = root.Q<Label>("MessageLog");
+        labelServerReady = root.Q<Label>("Ready");
+        labelServerNotReady = root.Q<Label>("NotReady");
+        labelThinking = root.Q<Label>("Thinking");
     }
 }
